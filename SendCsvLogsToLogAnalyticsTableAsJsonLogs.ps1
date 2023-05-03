@@ -176,7 +176,6 @@ Function Convert-CsvToJson($FileSystemWatcher, $SourceDirectory, $DestinationDir
     
         # Wait indefinitely for the FileSystemWatcher events
         $ExitEvent = New-Object System.Threading.ManualResetEvent -ArgumentList $false
-        Wait-Event -InputObject $ExitEvent
     }
     
     $Job = Start-Job -ScriptBlock $JobScriptBlock -ArgumentList $FileSystemWatcher, $CustomerId, $SharedKey, $LogType, $DestinationDirectory, $Action
@@ -191,8 +190,10 @@ $Job = Convert-CsvToJson -FileSystemWatcher $FileSystemWatcher -SourceDirectory 
 
 try {
     # Wait indefinitely for the custom event to exit gracefully
-    Wait-Event -InputObject $ExitEvent
+    $GlobalExitEvent = Register-ObjectEvent -InputObject $ExitEvent -EventName "Set" -Action { Write-Host "Exiting gracefully..." -ForegroundColor Green }
+    Wait-Event -SourceIdentifier $GlobalExitEvent.Name
 } finally {
     # Clean up the lock file
     Remove-LockFile
+    Unregister-Event -SourceIdentifier $GlobalExitEvent.Name
 }
