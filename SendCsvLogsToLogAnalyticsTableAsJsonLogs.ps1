@@ -183,13 +183,12 @@ Function Convert-CsvToJson($FileSystemWatcher, $SourceDirectory, $DestinationDir
 }
 
 # Create a FileSystemWatcher object outside the function
+$FileSystemWatcher = New-Object System.IO.FileSystemWatcher
 $FileSystemWatcher.Path = $SourceDirectory
 $FileSystemWatcher.Filter = "*.csv"
 $FileSystemWatcher.EnableRaisingEvents = $true
 $FileSystemWatcher.IncludeSubdirectories = $false
 $FileSystemWatcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite
-
-Register-ObjectEvent -InputObject $FileSystemWatcher -EventName "Changed" -Action $Action
 
 # Call Convert-CsvToJson function
 $Job = Convert-CsvToJson -FileSystemWatcher $FileSystemWatcher -SourceDirectory $SourceDirectory -DestinationDirectory $DestinationDirectory -CustomerId $CustomerId -SharedKey $SharedKey -LogType $LogType
