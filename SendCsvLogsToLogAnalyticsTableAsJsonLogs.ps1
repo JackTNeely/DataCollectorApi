@@ -38,12 +38,6 @@ function Remove-LockFile {
     }
 }
 
-# Trap the script exit and remove the lock file
-trap {
-    Remove-LockFile
-    exit
-}
-
 # Initialize hashtable to track file processing status and debounce timers
 $FileStatus = @{}
 $DebounceTimers = @{}
@@ -196,8 +190,8 @@ $FileSystemWatcher = New-Object System.IO.FileSystemWatcher
 $Job = Convert-CsvToJson -FileSystemWatcher $FileSystemWatcher -SourceDirectory $SourceDirectory -DestinationDirectory $DestinationDirectory -CustomerId $CustomerId -SharedKey $SharedKey -LogType $LogType
 
 try {
-    # Wait indefinitely for the job to complete (which should not happen unless there's an error)
-    Receive-Job -Job $Job -Wait
+    # Wait indefinitely for the custom event to exit gracefully
+    Wait-Event -InputObject $ExitEvent
 } finally {
     # Clean up the lock file
     Remove-LockFile
