@@ -186,3 +186,5 @@ try {
     # Clean up the lock file
     Remove-LockFile
 }
+
+test
