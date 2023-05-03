@@ -179,18 +179,19 @@ Function Convert-CsvToJson($FileSystemWatcher, $SourceDirectory, $DestinationDir
         Wait-Event -InputObject $ExitEvent
     }
     
-    Start-Job -ScriptBlock $JobScriptBlock -ArgumentList $FileSystemWatcher, $CustomerId, $SharedKey, $LogType, $DestinationDirectory
+    $Job = Start-Job -ScriptBlock $JobScriptBlock -ArgumentList $FileSystemWatcher, $CustomerId, $SharedKey, $LogType, $DestinationDirectory
+    return $Job
 }
 
 # Create a FileSystemWatcher object outside the function
 $FileSystemWatcher = New-Object System.IO.FileSystemWatcher
 
 # Call Convert-CsvToJson function
-Convert-CsvToJson -FileSystemWatcher $FileSystemWatcher -SourceDirectory $SourceDirectory -DestinationDirectory $DestinationDirectory -CustomerId $CustomerId -SharedKey $SharedKey -LogType $LogType
+$Job = Convert-CsvToJson -FileSystemWatcher $FileSystemWatcher -SourceDirectory $SourceDirectory -DestinationDirectory $DestinationDirectory -CustomerId $CustomerId -SharedKey $SharedKey -LogType $LogType
 
 try {
     # Wait indefinitely for the job to complete (which should not happen unless there's an error)
-    Receive-Job -Wait
+    Receive-Job -Job $Job -Wait
 } finally {
     # Clean up the lock file
     Remove-LockFile
