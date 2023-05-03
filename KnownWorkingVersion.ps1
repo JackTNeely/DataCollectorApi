@@ -1,8 +1,3 @@
-# This version of the script works, but has an issue where duplicate JSON files are sometimes created.
-# For example, if lines are removed from the end of a CSV file using PowerShell like this:
-# (Get-Content -Path "C:\CsvLogs\test.csv" | Select-Object -First ((Get-Content -Path "C:\CsvLogs\test.csv").Count - 1)) | Out-File -FilePath "C:\CsvLogs\test.csv" -Encoding UTF8
-# then a duplicate JSON file is created.
-
 # Replace with your Workspace ID. This is under "Azure Portal -> your Azure Monitor workspace -> Agents -> workspace ID."
 $CustomerId = "60ce9b54-7056-42c0-8d92-db98df5549be"
 
@@ -113,7 +108,6 @@ Function Convert-CsvToJson($SourceDirectory, $DestinationDirectory, $CustomerId,
         }
     }
 
-    # Use only the "Changed" event
     Register-ObjectEvent -InputObject $FileSystemWatcher -EventName "Changed" -Action $Action
 }
 
