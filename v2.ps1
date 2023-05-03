@@ -10,7 +10,7 @@ $CustomerId = "60ce9b54-7056-42c0-8d92-db98df5549be"
 $SharedKey = "+uxQT1KuYTbq8+flEVGnM+M9cqc6VRPtddFfsrYyYDDYCmX2yGJqrZNyseLrz56NtuZKzlTDIfbqmgVUL9Rf8Q=="
 
 # Specify the name of the record type that you'll be creating
-$LogType = "ApiTest09"
+$LogType = "ApiTest11"
 
 # Specify your source directory for CSV file monitoring and destination directory for converting to JSON and submitting to Log Analytics
 $SourceDirectory      = "C:\CsvLogs"
@@ -48,6 +48,23 @@ trap {
 }
 
 $DebounceTime = 5 # Time in seconds to wait after the last detected event
+
+# Create the function to create the authorization signature
+Function Build-Signature ($CustomerId, $SharedKey, $Date, $ContentLength, $Method, $ContentType, $Resource)
+{
+    $XHeaders = "x-ms-date:" + $Date
+    $StringToHash = $Method + "`n" + $ContentLength + "`n" + $ContentType + "`n" + $XHeaders + "`n" + $Resource
+
+    $BytesToHash = [Text.Encoding]::UTF8.GetBytes($StringToHash)
+    $KeyBytes = [Convert]::FromBase64String($SharedKey)
+
+    $Sha256 = New-Object System.Security.Cryptography.HMACSHA256
+    $Sha256.Key = $KeyBytes
+    $CalculatedHash = $Sha256.ComputeHash($BytesToHash)
+    $EncodedHash = [Convert]::ToBase64String($CalculatedHash)
+    $Authorization = 'SharedKey {0}:{1}' -f $CustomerId,$EncodedHash
+    return $Authorization
+}
 
 # Create the function to create and post the request
 Function Submit-LogAnalyticsData($CustomerId, $SharedKey, $Body, $LogType) {

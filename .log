@@ -1,6 +1,4 @@
-I get this back:
-
-`Starting script execution
+Starting script execution
 Unregister-Event : Cannot bind argument to parameter 'SourceIdentifier' because it is null.
 At line:198 char:40
 +     Unregister-Event -SourceIdentifier $GlobalExitEvent.Name
@@ -16,4 +14,4 @@ At line:193 char:58
     + CategoryInfo          : InvalidData: (:) [Register-ObjectEvent], ParameterBindingValidationExcep 
    tion
     + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Comm 
-   ands.RegisterObjectEventCommand`
+   ands.RegisterObjectEventCommand
