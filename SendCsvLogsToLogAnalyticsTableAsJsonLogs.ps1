@@ -168,8 +168,18 @@ Function Convert-CsvToJson($FileSystemWatcher, $SourceDirectory, $DestinationDir
         }
     }
 
-    # Pass the global variables to the $Action scriptblock using the ArgumentList parameter
-    Register-ObjectEvent -InputObject $FileSystemWatcher -EventName "Changed" -Action $Action -ArgumentList $CustomerId, $SharedKey, $LogType, $DestinationDirectory    
+    $JobScriptBlock = {
+        param($FileSystemWatcher, $CustomerId, $SharedKey, $LogType, $DestinationDirectory)
+    
+        # Pass the global variables to the $Action scriptblock using the ArgumentList parameter
+        Register-ObjectEvent -InputObject $FileSystemWatcher -EventName "Changed" -Action $Action -ArgumentList $CustomerId, $SharedKey, $LogType, $DestinationDirectory
+    
+        # Wait indefinitely for the FileSystemWatcher events
+        $ExitEvent = New-Object System.Threading.ManualResetEvent -ArgumentList $false
+        Wait-Event -InputObject $ExitEvent
+    }
+    
+    Start-Job -ScriptBlock $JobScriptBlock -ArgumentList $FileSystemWatcher, $CustomerId, $SharedKey, $LogType, $DestinationDirectory
 }
 
 # Create a FileSystemWatcher object outside the function
@@ -178,9 +188,9 @@ $FileSystemWatcher = New-Object System.IO.FileSystemWatcher
 # Call Convert-CsvToJson function
 Convert-CsvToJson -FileSystemWatcher $FileSystemWatcher -SourceDirectory $SourceDirectory -DestinationDirectory $DestinationDirectory -CustomerId $CustomerId -SharedKey $SharedKey -LogType $LogType
 
-$ExitEvent = New-Object System.Threading.ManualResetEvent -ArgumentList $false
 try {
-    Wait-Event -InputObject $ExitEvent
+    # Wait indefinitely for the job to complete (which should not happen unless there's an error)
+    Receive-Job -Wait
 } finally {
     # Clean up the lock file
     Remove-LockFile
