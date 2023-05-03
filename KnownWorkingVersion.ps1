@@ -97,9 +97,9 @@ Function Process-LastEvents {
     }
 }
 
-$ProcessingTimer.Elapsed.Add({
+Register-ObjectEvent -InputObject $ProcessingTimer -EventName "Elapsed" -Action {
     Process-LastEvents
-})
+}
 
 $ProcessingTimer.Start()
 
