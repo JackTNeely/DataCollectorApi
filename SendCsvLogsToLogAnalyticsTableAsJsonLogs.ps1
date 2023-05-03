@@ -49,6 +49,12 @@ $FileStatus = @{}
 $DebounceTimers = @{}
 
 $Action = {
+    # Use the $using: scope modifier to access local variables from the parent scope
+    $CustomerId = $using:CustomerId
+    $SharedKey = $using:SharedKey
+    $LogType = $using:LogType
+    $DestinationDirectory = $using:DestinationDirectory
+
     # Create the function to create the authorization signature
     Function Build-Signature ($CustomerId, $SharedKey, $Date, $ContentLength, $Method, $ContentType, $Resource)
     {
@@ -169,11 +175,9 @@ Function Convert-CsvToJson($FileSystemWatcher, $SourceDirectory, $DestinationDir
     $FileSystemWatcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite
 
     $JobScriptBlock = {
-        param($FileSystemWatcher, $CustomerId, $SharedKey, $LogType, $DestinationDirectory)
-    
         # Pass the global variables to the $Action scriptblock using the ArgumentList parameter
-        Register-ObjectEvent -InputObject $FileSystemWatcher -EventName "Changed" -Action $Action -ArgumentList $CustomerId, $SharedKey, $LogType, $DestinationDirectory
-    
+        Register-ObjectEvent -InputObject $FileSystemWatcher -EventName "Changed" -Action $Action
+
         # Wait indefinitely for the FileSystemWatcher events
         $ExitEvent = New-Object System.Threading.ManualResetEvent -ArgumentList $false
         Wait-Event -InputObject $ExitEvent
