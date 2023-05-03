@@ -96,12 +96,13 @@ Function Process-LastEvents {
         }
     }
     # Restart the timer after processing events
+    $ProcessingTimer.Stop()
     $ProcessingTimer.Start()
 }
 
-Register-ObjectEvent -InputObject $ProcessingTimer -EventName "Elapsed" -Action {
+$ProcessingTimer.add_Elapsed({
     Process-LastEvents
-}
+})
 
 $ProcessingTimer.Start()
 
