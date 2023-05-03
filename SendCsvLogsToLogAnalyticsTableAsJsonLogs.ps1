@@ -178,10 +178,9 @@ $FileSystemWatcher = New-Object System.IO.FileSystemWatcher
 # Call Convert-CsvToJson function
 Convert-CsvToJson -FileSystemWatcher $FileSystemWatcher -SourceDirectory $SourceDirectory -DestinationDirectory $DestinationDirectory -CustomerId $CustomerId -SharedKey $SharedKey -LogType $LogType
 
+$ExitEvent = New-Object System.Threading.ManualResetEvent -ArgumentList $false
 try {
-    while ($true) {
-        Start-Sleep -Seconds 5
-    }
+    Wait-Event -InputObject $ExitEvent
 } finally {
     # Clean up the lock file
     Remove-LockFile
