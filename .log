@@ -1,5 +1,6 @@
+InvalidOperation: C:\Users\jneely\OneDrive - FirstBank\Documents\Projects\DataCollectorApi\KnownWorkingVersion.ps1:100:1
 Line |
- 109 |  …      New-Item -ItemType Directory -Path $DestinationDirectory | Out-N …
-     |                                            ~~~~~~~~~~~~~~~~~~~~~
-     | Cannot bind argument to parameter 'Path' because 
-     | it is null.
+ 100 |  $ProcessingTimer.Elapsed.Add({
+     |  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | You cannot call a method on a null-valued       
+     | expression.
