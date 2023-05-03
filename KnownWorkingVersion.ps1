@@ -95,6 +95,8 @@ Function Process-LastEvents {
             Write-Host "Error: $_" -ForegroundColor Red
         }
     }
+    # Restart the timer after processing events
+    $ProcessingTimer.Start()
 }
 
 Register-ObjectEvent -InputObject $ProcessingTimer -EventName "Elapsed" -Action {
