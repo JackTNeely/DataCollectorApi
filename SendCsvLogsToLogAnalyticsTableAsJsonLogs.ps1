@@ -189,11 +189,9 @@ $FileSystemWatcher = New-Object System.IO.FileSystemWatcher
 $Job = Convert-CsvToJson -FileSystemWatcher $FileSystemWatcher -SourceDirectory $SourceDirectory -DestinationDirectory $DestinationDirectory -CustomerId $CustomerId -SharedKey $SharedKey -LogType $LogType
 
 try {
-    # Wait indefinitely for the custom event to exit gracefully
-    $GlobalExitEvent = Register-ObjectEvent -InputObject $ExitEvent -EventName "Set" -Action { Write-Host "Exiting gracefully..." -ForegroundColor Green }
-    Wait-Event -SourceIdentifier $GlobalExitEvent.Name
+    # Wait indefinitely for the job to complete
+    Wait-Job -Job $Job
 } finally {
     # Clean up the lock file
     Remove-LockFile
-    Unregister-Event -SourceIdentifier $GlobalExitEvent.Name
 }
