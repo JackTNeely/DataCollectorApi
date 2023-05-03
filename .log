@@ -1,0 +1,4 @@
+Starting script execution
+Register-ObjectEvent: Cannot bind argument to parameter 
+'InputObject' because it is null.
+Wait-Event: A parameter cannot be found that matches parameter name 'InputObject'.
