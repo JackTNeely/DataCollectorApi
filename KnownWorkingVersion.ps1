@@ -16,37 +16,6 @@ $LogType = "ApiTest09"
 $SourceDirectory      = "C:\CsvLogs"
 $DestinationDirectory = "C:\ApiLogs"
 
-# Lock file path
-$LockFilePath = "C:\ApiLogs\lock.txt"
-
-# Check if the script is already running
-if (Test-Path -Path $LockFilePath) {
-    Write-Host "Script is already running." -ForegroundColor Yellow
-    exit
-}
-
-# Create the lock file
-try {
-    New-Item -Path $LockFilePath -ItemType File -Force | Out-Null
-}
-catch {
-    Write-Host "Failed to create the lock file." -ForegroundColor Red
-    exit
-}
-
-# Function to remove the lock file
-function Remove-LockFile {
-    if (Test-Path -Path $LockFilePath) {
-        Remove-Item -Path $LockFilePath -Force | Out-Null
-    }
-}
-
-# Trap the script exit and remove the lock file
-trap {
-    Remove-LockFile
-    exit
-}
-
 # Create the function to create the authorization signature
 Function Build-Signature ($CustomerId, $SharedKey, $Date, $ContentLength, $Method, $ContentType, $Resource)
 {
@@ -91,6 +60,7 @@ Function Submit-LogAnalyticsData($CustomerId, $SharedKey, $Body, $LogType) {
     return $Response.StatusCode
 }
 
+# Create the function to create and post the request
 Function Convert-CsvToJson($SourceDirectory, $DestinationDirectory, $CustomerId, $SharedKey, $LogType) {
     if (!(Test-Path -Path $DestinationDirectory)) {
         New-Item -ItemType Directory -Path $DestinationDirectory | Out-Null
@@ -103,40 +73,23 @@ Function Convert-CsvToJson($SourceDirectory, $DestinationDirectory, $CustomerId,
     $FileSystemWatcher.IncludeSubdirectories = $false
     $FileSystemWatcher.NotifyFilter = [System.IO.NotifyFilters]::FileName -bor [System.IO.NotifyFilters]::LastWrite
 
-    # Initialize hashtable to track file processing status
-    $FileStatus = @{}
-
     $Action = {
         $CsvFilePath = $Event.SourceEventArgs.FullPath
-        $FileId = [Guid]::NewGuid().ToString()  # Generate unique identifier for the file
-        Write-Host "Detected change in file: $CsvFilePath (File ID: $FileId)" -ForegroundColor Cyan
-    
-        # Check if the file is already being processed
-        if ($FileStatus.ContainsKey($CsvFilePath)) {
-            Write-Host "File is already being processed: $CsvFilePath (File ID: $FileId)" -ForegroundColor Yellow
-            return
-        }
-    
-        # Add the file to the processing list
-        $FileStatus.Add($CsvFilePath, $true)
+        Write-Host "Detected change in file: $CsvFilePath" -ForegroundColor Cyan
 
         try {
-            # Wait for the CSV file to be fully written and closed
-            Start-Sleep -Seconds 5
-
             $CsvData = Import-Csv -Path $CsvFilePath
             $JsonData = $CsvData | ConvertTo-Json
             $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
             $CsvFileName = [System.IO.Path]::GetFileNameWithoutExtension($CsvFilePath)
-            $UniqueIdentifier = (Get-Date).Ticks  # Generate unique identifier
-            $JsonFileName = "{0}-{1}-{2}.json" -f $CsvFileName, $Timestamp, $UniqueIdentifier
+            $JsonFileName = "{0}-{1}.json" -f $CsvFileName, $Timestamp
             $JsonFilePath = Join-Path -Path $DestinationDirectory -ChildPath $JsonFileName
 
             if (Test-Path -Path $JsonFilePath) {
-                Write-Host "JSON file with the same name already exists: $JsonFilePath. `nUnique ID: $UniqueIdentifier" -ForegroundColor Yellow
+                Write-Host "JSON file with the same name already exists: $JsonFilePath" -ForegroundColor Yellow
             } else {
                 $JsonData | Set-Content -Path $JsonFilePath
-                Write-Host "Created JSON file: $JsonFilePath. `nUnique ID: $UniqueIdentifier" -ForegroundColor Cyan
+                Write-Host "Created JSON file: $JsonFilePath" -ForegroundColor Cyan
 
                 $StatusCode = Submit-LogAnalyticsData -CustomerId $CustomerId -SharedKey $SharedKey -Body $JsonData -LogType $LogType
                 if ($StatusCode -eq 200) {
@@ -148,18 +101,15 @@ Function Convert-CsvToJson($SourceDirectory, $DestinationDirectory, $CustomerId,
         } catch {
             Write-Host "An error occurred while processing the file: $CsvFilePath" -ForegroundColor Red
             Write-Host "Error: $_" -ForegroundColor Red
-        } finally {
-            # Remove the file from the processing list
-            $FileStatus.Remove($CsvFilePath)
         }
     }
 
-    # Use only the "Changed" event
     Register-ObjectEvent -InputObject $FileSystemWatcher -EventName "Changed" -Action $Action
 }
 
 Convert-CsvToJson -SourceDirectory $SourceDirectory -DestinationDirectory $DestinationDirectory -CustomerId $CustomerId -SharedKey $SharedKey -LogType $LogType
 
+# Keep the script running indefinitely to continue monitoring for changes.
 while ($true) {
     Start-Sleep -Seconds 5
 }
