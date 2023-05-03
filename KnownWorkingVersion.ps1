@@ -55,16 +55,11 @@ Function Submit-LogAnalyticsData($CustomerId, $SharedKey, $Body, $LogType) {
     return $Response.StatusCode
 }
 
-# Initialize a dictionary for storing the last processed time for each file
-$LastProcessed = @{}
-
 # Create the function to create and post the request
 Function Convert-CsvToJson($SourceDirectory, $DestinationDirectory, $CustomerId, $SharedKey, $LogType) {
     if (!(Test-Path -Path $DestinationDirectory)) {
         New-Item -ItemType Directory -Path $DestinationDirectory | Out-Null
     }
-
-    $DebounceTimeInSeconds = 1
 
     $FileSystemWatcher = New-Object System.IO.FileSystemWatcher
     $FileSystemWatcher.Path = $SourceDirectory
@@ -75,15 +70,6 @@ Function Convert-CsvToJson($SourceDirectory, $DestinationDirectory, $CustomerId,
 
     $Action = {
         $CsvFilePath = $Event.SourceEventArgs.FullPath
-
-        # Check if the file was recently processed
-        if ($LastProcessed.ContainsKey($CsvFilePath) -and ((Get-Date) - $LastProcessed[$CsvFilePath]).TotalSeconds -lt $DebounceTimeInSeconds) {
-            return
-        }
-
-        # Update the last processed time for the file
-        $LastProcessed[$CsvFilePath] = Get-Date
-
         Write-Host "Detected change in file: $CsvFilePath" -ForegroundColor Cyan
 
         try {
