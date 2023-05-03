@@ -175,15 +175,17 @@ Function Convert-CsvToJson($FileSystemWatcher, $SourceDirectory, $DestinationDir
     $FileSystemWatcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite
 
     $JobScriptBlock = {
+        param($FileSystemWatcher, $CustomerId, $SharedKey, $LogType, $DestinationDirectory, $Action)
+    
         # Pass the global variables to the $Action scriptblock using the ArgumentList parameter
         Register-ObjectEvent -InputObject $FileSystemWatcher -EventName "Changed" -Action $Action
-
+    
         # Wait indefinitely for the FileSystemWatcher events
         $ExitEvent = New-Object System.Threading.ManualResetEvent -ArgumentList $false
         Wait-Event -InputObject $ExitEvent
     }
     
-    $Job = Start-Job -ScriptBlock $JobScriptBlock -ArgumentList $FileSystemWatcher, $CustomerId, $SharedKey, $LogType, $DestinationDirectory
+    $Job = Start-Job -ScriptBlock $JobScriptBlock -ArgumentList $FileSystemWatcher, $CustomerId, $SharedKey, $LogType, $DestinationDirectory, $Action
     return $Job
 }
 
