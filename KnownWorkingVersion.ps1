@@ -131,7 +131,7 @@ Function Start-FileSystemWatcher($SourceDirectory, $DestinationDirectory, $Custo
 }
 
 # Call the Start-FileSystemWatcher function
-Start-FileSystemWatcher -SourceDirectory $SourceDirectory -DestinationDirectory $Destination
+Start-FileSystemWatcher -SourceDirectory $SourceDirectory -DestinationDirectory $DestinationDirectory -CustomerId $CustomerId -SharedKey $SharedKey -LogType $LogType
 
 # Keep the script running indefinitely to continue monitoring for changes.
 while ($true) {
