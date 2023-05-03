@@ -55,34 +55,17 @@ Function Submit-LogAnalyticsData($CustomerId, $SharedKey, $Body, $LogType) {
     return $Response.StatusCode
 }
 
-# Initialize a dictionary for storing the last processed time for each file
-$LastProcessed = @{}
+# Add these lines to initialize a dictionary for storing the last events and a timer
+$LastEvents = @{}
+$ProcessingTimer = New-Object Timers.Timer
+$ProcessingTimer.Interval = 1000 # 1000 ms (1 second) interval
+$ProcessingTimer.AutoReset = $false
 
-# Create the function to create and post the request
-Function Convert-CsvToJson($SourceDirectory, $DestinationDirectory, $CustomerId, $SharedKey, $LogType) {
-    if (!(Test-Path -Path $DestinationDirectory)) {
-        New-Item -ItemType Directory -Path $DestinationDirectory | Out-Null
-    }
-
-    $DebounceTimeInSeconds = 1
-
-    $FileSystemWatcher = New-Object System.IO.FileSystemWatcher
-    $FileSystemWatcher.Path = $SourceDirectory
-    $FileSystemWatcher.Filter = "*.csv"
-    $FileSystemWatcher.EnableRaisingEvents = $true
-    $FileSystemWatcher.IncludeSubdirectories = $false
-    $FileSystemWatcher.NotifyFilter = [System.IO.NotifyFilters]::FileName -bor [System.IO.NotifyFilters]::LastWrite
-
-    $Action = {
-        $CsvFilePath = $Event.SourceEventArgs.FullPath
-
-        # Check if the file was recently processed
-        if ($LastProcessed.ContainsKey($CsvFilePath) -and ((Get-Date) - $LastProcessed[$CsvFilePath]).TotalSeconds -lt $DebounceTimeInSeconds) {
-            return
-        }
-
-        # Update the last processed time for the file
-        $LastProcessed[$CsvFilePath] = Get-Date
+# Add a function to process the last events when the timer elapses
+Function Process-LastEvents {
+    foreach ($CsvFilePath in $LastEvents.Keys) {
+        $Event = $LastEvents[$CsvFilePath]
+        $LastEvents.Remove($CsvFilePath)
 
         Write-Host "Detected change in file: $CsvFilePath" -ForegroundColor Cyan
 
@@ -112,11 +95,43 @@ Function Convert-CsvToJson($SourceDirectory, $DestinationDirectory, $CustomerId,
             Write-Host "Error: $_" -ForegroundColor Red
         }
     }
+}
+
+$ProcessingTimer.Elapsed.Add({
+    Process-LastEvents
+})
+
+$ProcessingTimer.Start()
+
+# Create the function to create and post the request
+Function Start-FileSystemWatcher($SourceDirectory, $DestinationDirectory, $CustomerId, $SharedKey, $LogType) {
+    if (!(Test-Path -Path $DestinationDirectory)) {
+        New-Item -ItemType Directory -Path $DestinationDirectory | Out-Null
+    }
+
+    $FileSystemWatcher = New-Object System.IO.FileSystemWatcher
+    $FileSystemWatcher.Path = $SourceDirectory
+    $FileSystemWatcher.Filter = "*.csv"
+    $FileSystemWatcher.EnableRaisingEvents = $true
+    $FileSystemWatcher.IncludeSubdirectories = $false
+    $FileSystemWatcher.NotifyFilter = [System.IO.NotifyFilters]::FileName -bor [System.IO.NotifyFilters]::LastWrite
+
+    $Action = {
+        $CsvFilePath = $Event.SourceEventArgs.FullPath
+
+        # Store the last event for the file
+        $LastEvents[$CsvFilePath] = $Event
+
+        # Restart the timer
+        $ProcessingTimer.Stop()
+        $ProcessingTimer.Start()
+    }
 
     Register-ObjectEvent -InputObject $FileSystemWatcher -EventName "Changed" -Action $Action
 }
 
-Convert-CsvToJson -SourceDirectory $SourceDirectory -DestinationDirectory $DestinationDirectory -CustomerId $CustomerId -SharedKey $SharedKey -LogType $LogType
+# Call the Start-FileSystemWatcher function
+Start-FileSystemWatcher -SourceDirectory $SourceDirectory -DestinationDirectory $Destination
 
 # Keep the script running indefinitely to continue monitoring for changes.
 while ($true) {
