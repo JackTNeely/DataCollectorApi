@@ -1,17 +1,5 @@
-Starting script execution
-Unregister-Event : Cannot bind argument to parameter 'SourceIdentifier' because it is null.
-At line:198 char:40
-+     Unregister-Event -SourceIdentifier $GlobalExitEvent.Name
-+                                        ~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : InvalidData: (:) [Unregister-Event], ParameterBindingValidationException
-    + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Comm 
-   ands.UnregisterEventCommand
- 
-Register-ObjectEvent : Cannot bind argument to parameter 'InputObject' because it is null.
-At line:193 char:58
-+ ... lobalExitEvent = Register-ObjectEvent -InputObject $ExitEvent -EventN ...
-+                                                        ~~~~~~~~~~
-    + CategoryInfo          : InvalidData: (:) [Register-ObjectEvent], ParameterBindingValidationExcep 
-   tion
-    + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Comm 
-   ands.RegisterObjectEventCommand
+Line |
+ 109 |  …      New-Item -ItemType Directory -Path $DestinationDirectory | Out-N …
+     |                                            ~~~~~~~~~~~~~~~~~~~~~
+     | Cannot bind argument to parameter 'Path' because 
+     | it is null.
