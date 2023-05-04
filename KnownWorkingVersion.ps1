@@ -106,6 +106,17 @@ $ProcessingTimer.add_Elapsed({
 
 $ProcessingTimer.Start()
 
+$Action = {
+    $CsvFilePath = $Event.SourceEventArgs.FullPath
+
+    # Store the last event for the file
+    $LastEvents[$CsvFilePath] = $Event
+
+    # Restart the timer
+    $ProcessingTimer.Stop()
+    $ProcessingTimer.Start()
+}
+
 # Create the function to create and post the request
 Function Start-FileSystemWatcher($SourceDirectory, $DestinationDirectory, $CustomerId, $SharedKey, $LogType) {
     if (!(Test-Path -Path $DestinationDirectory)) {
@@ -118,17 +129,6 @@ Function Start-FileSystemWatcher($SourceDirectory, $DestinationDirectory, $Custo
     $FileSystemWatcher.EnableRaisingEvents = $true
     $FileSystemWatcher.IncludeSubdirectories = $false
     $FileSystemWatcher.NotifyFilter = [System.IO.NotifyFilters]::FileName -bor [System.IO.NotifyFilters]::LastWrite
-
-    $Action = {
-        $CsvFilePath = $Event.SourceEventArgs.FullPath
-
-        # Store the last event for the file
-        $LastEvents[$CsvFilePath] = $Event
-
-        # Restart the timer
-        $ProcessingTimer.Stop()
-        $ProcessingTimer.Start()
-    }
 
     Register-ObjectEvent -InputObject $FileSystemWatcher -EventName "Changed" -Action $Action
 }
